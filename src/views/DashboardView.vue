@@ -25,11 +25,21 @@
         changeText="-2% par rapport au mois dernier"
       />
     </section>
+    <section class="chart-section">
+      <h3>Courbes d'évolution</h3>
+      <MultiLineChart />
+    </section>
+    <SimulationTable />
+
   </div>
+  <Footer />
 </template>
 
 <script setup lang="ts">
 import StatCard from '@/components/StatCard.vue'
+import MultiLineChart from '@/components/MultiLineChart.vue'
+import SimulationTable from '@/components/SimulationTable.vue'
+import Footer from '@/components/Footer.vue'
 </script>
 
 <style scoped>
@@ -42,5 +52,12 @@ import StatCard from '@/components/StatCard.vue'
   flex-wrap: wrap;
   gap: 1.5rem;
   margin-top: 2rem;
+}
+
+.chart-section {
+  margin-top: 4rem;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 8px;
 }
 </style>
