@@ -23,19 +23,19 @@ const chartData = {
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
   datasets: [
     {
-      label: 'Linéaire A',
+      label: 'Seuil de perte',
       data: [5, 10, 15, 20, 25],
       borderColor: '#4A6D86',
       fill: false
     },
     {
-      label: 'Linéaire B',
+      label: 'Seuil de bénéfice',
       data: [3, 8, 13, 18, 23],
       borderColor: '#2B3A46',
       fill: false
     },
     {
-      label: 'Points A',
+      label: 'Chiffre d\'affaires',
       data: [25, 8, 47, 12, 30],
       borderColor: '#e67e22',
       backgroundColor: '#e67e22',
@@ -44,7 +44,7 @@ const chartData = {
       pointRadius: 5
     },
     {
-      label: 'Points B',
+      label: 'Commandes',
       data: [12, 33, 5, 22, 40],
       borderColor: '#e74c3c',
       backgroundColor: '#e74c3c',

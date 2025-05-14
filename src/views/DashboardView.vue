@@ -5,23 +5,23 @@
     <!-- Première section : Statistiques -->
     <section class="stat-section">
       <StatCard
-        name="Revenus"
-        value="12 500 €"
+        name="Chiffre d'affaire"
+        value="42 000 €"
         changeText="+12% depuis le mois dernier"
       />
       <StatCard
-        name="Abonnés"
-        value="1 850"
+        name="Charge"
+        value="12 850 €"
         changeText="+7% en 30 jours"
       />
       <StatCard
-        name="Conversion"
-        value="38%"
+        name="Bénéfice net"
+        value="29 150 €"
         changeText="+4% par rapport à la semaine dernière"
       />
       <StatCard
-        name="Visites"
-        value="42 000"
+        name="Taux de charge"
+        value="38%"
         changeText="-2% par rapport au mois dernier"
       />
     </section>
