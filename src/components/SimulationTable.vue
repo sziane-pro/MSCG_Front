@@ -4,7 +4,9 @@
       <h3 class="section-title">Mes simulations</h3>
       <div class="buttons">
         <BaseButton color="primary">Exporter</BaseButton>
-        <BaseButton color="primary">Nouvelle simulation</BaseButton>
+        <RouterLink to="/simulation">
+          <BaseButton color="primary">Nouvelle simulation</BaseButton>
+        </RouterLink>
       </div>
     </div>
 
@@ -45,7 +47,7 @@ const simulations = [
   {
     nom: 'Simulation B',
     statut: 'En cours',
-    date: '2024-05-05',
+    date: '2024-05-12',
     ca: '8 500 €',
     revenuNet: '5 300 €'
   }

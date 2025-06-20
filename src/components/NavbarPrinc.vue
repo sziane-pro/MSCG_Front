@@ -8,6 +8,7 @@
       <ul class="nav-tabs" v-if="auth.isAuthenticated">
         <li><RouterLink to="/">Accueil</RouterLink></li>
         <li><RouterLink to="/dashboard">Dashboard</RouterLink></li>
+        <li><RouterLink to="/simulation">Simulation</RouterLink></li>
       </ul>
     </div>
 

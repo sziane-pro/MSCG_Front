@@ -4,6 +4,7 @@ import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import DashboardView from '@/views/DashboardView.vue'
+import SimulationView from '@/views/SimulationView.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const routes = [
@@ -15,6 +16,12 @@ const routes = [
     name: 'dashboard',
     component: DashboardView,
     meta: { requiresAuth: true } // ← protection activée ici
+  },
+  {
+    path: '/simulation',
+    name: 'simulation',
+    component: SimulationView,
+    meta: { requiresAuth: true }
   }
 ]
 
