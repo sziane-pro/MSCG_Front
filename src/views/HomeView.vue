@@ -1,19 +1,15 @@
 <template>
   <div>
-    <!-- Section Hero -->
     <section class="hero-section">
       <div class="hero-content">
         <div class="badge">
           ⚡ Nouvelle génération de comptabilité et gestion
         </div>
         <h1 class="hero-title">
-          Le GOUVERNAIL,<br/>
           Manageur MSCG Solo
         </h1>
         <p class="hero-description">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed non tellus sit 
-          ormet nisl lacinia condimentum quis vel tellus. Aenean tincidunt et diam 
-          vitae interdum.
+          Simplifiez votre comptabilité, votre gestion et centralisez tous vos documents en un seul endroit. Conçu pour les indépendants qui veulent se concentrer sur l’essentiel : leur activité.
         </p>
         <BaseButton color="primary" size="lg" class="hero-button">
           Commencer gratuitement

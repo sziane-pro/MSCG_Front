@@ -1013,7 +1013,7 @@ const calculateFinalResults = () => {
 }
 
 .step-item.completed .step-label {
-  color: rgba(255, 255, 255, 0.9);
+  color: #059669;
 }
 
 /* Ligne de progression dynamique */
