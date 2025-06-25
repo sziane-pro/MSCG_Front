@@ -16,7 +16,9 @@
         required
       />
 
-      <BaseButton :disabled="loading" color="secondary">Connexion</BaseButton>
+      <BaseButton :disabled="loading" color="secondary">
+        {{ loading ? 'Connexion...' : 'Connexion' }}
+      </BaseButton>
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
     </form>
 
@@ -36,22 +38,31 @@ import { useRouter } from 'vue-router'
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
-const loading = ref(false)
 
 const auth = useAuthStore()
 const router = useRouter()
 
-const login = async () => {
+// Utiliser loading du store
+const loading = auth.loading
+
+const login = () => {
   errorMessage.value = ''
-  loading.value = true
-  try {
-    await auth.login(email.value, password.value)
-    router.push('/')
-  } catch (e: any) {
-    errorMessage.value = e.message || 'Erreur de connexion'
-  } finally {
-    loading.value = false
+  
+  // Validation basique
+  if (!email.value || !password.value) {
+    errorMessage.value = 'Veuillez remplir tous les champs'
+    return
   }
+
+  // Appeler la vraie méthode login du store
+  auth.login(email.value, password.value)
+    .then(() => {
+      // Redirection après connexion réussie
+      router.push('/')
+    })
+    .catch((error: any) => {
+      errorMessage.value = error.message || 'Erreur de connexion'
+    })
 }
 </script>
 
@@ -74,6 +85,7 @@ input {
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .link {

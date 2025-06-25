@@ -1,7 +1,14 @@
 <template>
   <div class="simulation-container">
     <div class="simulation-header">
-      <h1>Simulation</h1>
+      <h1>
+        {{ isEditMode ? `Modification: ${loadedSimulation?.name || 'Simulation'}` : 'Simulation Financière' }}
+      </h1>
+      
+      <!-- Indicateur de chargement -->
+      <div v-if="loading" class="loading-indicator">
+        <p>Chargement de la simulation...</p>
+      </div>
       
       <!-- Indicateur d'étapes -->
       <div class="steps-indicator" :data-progress="currentStep">
@@ -467,8 +474,9 @@
           v-if="currentStep === steps.length"
           @click="finishSimulation" 
           class="nav-button finish-button"
+          :disabled="saving"
         >
-          Terminer la simulation
+          {{ saving ? 'Sauvegarde...' : 'Terminer la simulation' }}
         </button>
       </div>
     </div>
@@ -476,7 +484,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import apiService from '@/services/apiService'
 import '@/assets/simulation.css'
 
 interface Category {
@@ -500,6 +511,17 @@ const steps = ref<Step[]>([
 ])
 
 const currentStep = ref<number>(1)
+
+// État de sauvegarde et navigation
+const saving = ref(false)
+const loading = ref(false)
+const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
+
+// Données de la simulation chargée (si en mode édition)
+const loadedSimulation = ref(null)
+const isEditMode = computed(() => !!route.query.load)
 
 // Données existantes (Étape 1)
 const categories = ref<Category[]>([
@@ -875,8 +897,81 @@ const goToStep = (stepNumber: number) => {
 }
 
 const finishSimulation = () => {
-  console.log('Simulation terminée')
-  // Ici vous pourriez enregistrer les données, rediriger, etc.
+  if (!authStore.isAuthenticated) {
+    alert('Vous devez être connecté pour sauvegarder une simulation')
+    return
+  }
+
+  // Demander le nom de la simulation
+  const simulationName = prompt('Nom de la simulation:', 'Ma simulation du ' + new Date().toLocaleDateString())
+  if (!simulationName) {
+    return
+  }
+
+  saving.value = true
+
+  try {
+    // Préparer toutes les données pour la sauvegarde
+    const simulationData = {
+      name: simulationName,
+      categories: categories.value.map(cat => ({
+        name: cat.name,
+        monthly: cat.monthly || 0
+      })),
+      comfortCategories: comfortCategories.value.map(cat => ({
+        name: cat.name,
+        monthly: cat.monthly || 0
+      })),
+      operatingCharges: operatingCharges.value.map(charge => ({
+        name: charge.name,
+        monthly: charge.monthly || 0
+      })),
+      parameters: {
+        timeHorizon: temporalParams.value.workingMonthsPerYear * 12 / 10.62, // Convertir en mois
+        adjustmentPeriod: 6, // Valeur par défaut
+        growthRate: 0, // Pas utilisé actuellement dans le frontend
+        coefficient: coefficient.value,
+        socialChargesRate: socialChargesParams.value.microEnterprise.socialChargesRate,
+        socialChargesMaxBase: 45000, // Valeur par défaut
+        microBrutMarginRate: socialChargesParams.value.microEnterprise.grossMarginRate
+      },
+      results: {
+        totalMonthlyRevenue: totalMonthlyRevenue.value,
+        totalVitalCharges: totalMonthly.value,
+        totalComfortCharges: totalComfortMonthly.value,
+        totalOperatingCharges: totalOperatingCharges.value,
+        iterativeChargesResults: iterativeChargesResults.value?.converged ? [iterativeChargesResults.value] : [],
+        iterativeRevenueResults: [], // Pas encore implémenté dans le frontend
+        iterativeSocialChargesResults: [], // Pas encore implémenté dans le frontend
+        finalNetRevenue: iterativeChargesResults.value?.converged ? 
+          (iterativeChargesResults.value.microEnterprise?.netRevenue || totalMonthlyRevenue.value) : 
+          totalMonthlyRevenue.value,
+        finalGrossRevenue: iterativeChargesResults.value?.converged ? 
+          (iterativeChargesResults.value.microEnterprise?.revenue || totalMonthlyRevenue.value * 12) : 
+          totalMonthlyRevenue.value * 12
+      }
+    }
+
+    // Sauvegarder via l'API
+    apiService.createSimulation(simulationData)
+      .then(response => {
+        saving.value = false
+        alert('Simulation sauvegardée avec succès !')
+        
+        // Rediriger vers le dashboard
+        router.push('/')
+      })
+      .catch(error => {
+        saving.value = false
+        console.error('Erreur sauvegarde simulation:', error)
+        alert('Erreur lors de la sauvegarde : ' + error.message)
+      })
+
+  } catch (error) {
+    saving.value = false
+    console.error('Erreur préparation données:', error)
+    alert('Erreur lors de la préparation des données')
+  }
 }
 
 // Fonctions de calcul
@@ -891,6 +986,66 @@ const calculateBreakeven = () => {
 const calculateFinalResults = () => {
   console.log('Résultats finaux calculés')
 }
+
+// Fonction pour charger une simulation existante
+const loadSimulation = (simulationId: string) => {
+  loading.value = true
+  
+  apiService.getSimulation(parseInt(simulationId))
+    .then(simulation => {
+      loadedSimulation.value = simulation
+
+      // Charger les données dans les formulaires
+      if (simulation.categories) {
+        simulation.categories.forEach((cat) => {
+          if (cat.categoryType === 'vital') {
+            const existingCat = categories.value.find(c => c.name === cat.name)
+            if (existingCat) {
+              existingCat.monthly = cat.monthlyAmount
+            }
+          } else if (cat.categoryType === 'confort') {
+            const existingCat = comfortCategories.value.find(c => c.name === cat.name)
+            if (existingCat) {
+              existingCat.monthly = cat.monthlyAmount
+            }
+          }
+        })
+      }
+
+      if (simulation.operatingCharges) {
+        simulation.operatingCharges.forEach((charge) => {
+          const existingCharge = operatingCharges.value.find(c => c.name === charge.name)
+          if (existingCharge) {
+            existingCharge.monthly = charge.monthlyAmount
+          }
+        })
+      }
+
+      if (simulation.parameters) {
+        const params = simulation.parameters
+        coefficient.value = params.coefficient || coefficient.value
+        socialChargesParams.value.microEnterprise.socialChargesRate = params.socialChargesRate
+        socialChargesParams.value.microEnterprise.grossMarginRate = params.microBrutMarginRate
+      }
+
+      // Aller directement à l'étape 3 pour voir les résultats
+      currentStep.value = 3
+      loading.value = false
+    })
+    .catch(error => {
+      console.error('Erreur chargement simulation:', error)
+      alert('Erreur lors du chargement de la simulation')
+      loading.value = false
+    })
+}
+
+// Charger simulation si ID fourni
+onMounted(() => {
+  const simulationId = route.query.load as string
+  if (simulationId && authStore.isAuthenticated) {
+    loadSimulation(simulationId)
+  }
+})
 </script>
 
 <style scoped>
@@ -910,6 +1065,15 @@ const calculateFinalResults = () => {
   font-size: 2rem;
   font-weight: 600;
   text-align: center;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-lg);
 }
 
 /* Indicateur d'étapes */
