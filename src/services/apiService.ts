@@ -140,53 +140,53 @@ class ApiService {
 
   // **AUTHENTIFICATION**
   register(email: string, password: string, firstname?: string, lastname?: string): Promise<LoginResponse> {
-    return this.fetchApi<LoginResponse>('/auth/register', {
+    return this.fetchApi<LoginResponse>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password, firstname, lastname })
     })
   }
 
   login(email: string, password: string): Promise<LoginResponse> {
-    return this.fetchApi<LoginResponse>('/auth/login', {
+    return this.fetchApi<LoginResponse>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password })
     })
   }
 
   getCurrentUser(): Promise<User> {
-    return this.fetchApi<User>('/auth/me')
+    return this.fetchApi<User>('/api/auth/me')
   }
 
   // **SIMULATIONS - LISTE ET DASHBOARD**
   getUserSimulations(): Promise<SimulationListItem[]> {
-    return this.fetchApi<SimulationListItem[]>('/simulations')
+    return this.fetchApi<SimulationListItem[]>('/api/simulations')
   }
 
   getDashboardStats(): Promise<DashboardStats> {
-    return this.fetchApi<DashboardStats>('/simulations/dashboard/stats')
+    return this.fetchApi<DashboardStats>('/api/simulations/dashboard/stats')
   }
 
   // **SIMULATIONS - CRUD COMPLET**
   createSimulation(data: CreateSimulationData): Promise<{ simulation: FullSimulation }> {
-    return this.fetchApi<{ simulation: FullSimulation }>('/simulations', {
+    return this.fetchApi<{ simulation: FullSimulation }>('/api/simulations', {
       method: 'POST',
       body: JSON.stringify(data)
     })
   }
 
   getSimulation(id: number): Promise<FullSimulation> {
-    return this.fetchApi<FullSimulation>(`/simulations/${id}`)
+    return this.fetchApi<FullSimulation>(`/api/simulations/${id}`)
   }
 
   updateSimulation(id: number, data: Partial<CreateSimulationData>): Promise<{ simulation: FullSimulation }> {
-    return this.fetchApi<{ simulation: FullSimulation }>(`/simulations/${id}`, {
+    return this.fetchApi<{ simulation: FullSimulation }>(`/api/simulations/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data)
     })
   }
 
   deleteSimulation(id: number): Promise<{ message: string }> {
-    return this.fetchApi<{ message: string }>(`/simulations/${id}`, {
+    return this.fetchApi<{ message: string }>(`/api/simulations/${id}`, {
       method: 'DELETE'
     })
   }
