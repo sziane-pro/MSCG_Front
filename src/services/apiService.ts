@@ -1,5 +1,5 @@
 // Service API centralisé pour toutes les communications avec le backend
-const API_BASE_URL = 'http://185.98.139.128:40150'
+const API_BASE_URL = 'http://localhost:5002'
 
 interface ApiResponse<T = any> {
   message?: string
@@ -13,16 +13,16 @@ interface LoginResponse {
   user: {
     id: number
     email: string
-    firstname?: string
-    lastname?: string
+    firstname: string    // Obligatoire maintenant
+    lastname: string     // Obligatoire maintenant
   }
 }
 
 interface User {
   id: number
   email: string
-  firstname?: string
-  lastname?: string
+  firstname: string      // Obligatoire maintenant
+  lastname: string       // Obligatoire maintenant
   createdAt: string
   updatedAt: string
 }
@@ -34,6 +34,7 @@ interface SimulationListItem {
   date: string
   ca: string
   revenuNet: string
+  bestOption?: string    // Nouveau champ
   createdAt: string
   updatedAt: string
 }
@@ -55,15 +56,17 @@ interface SimulationParameters {
 }
 
 interface SimulationResults {
-  totalMonthlyRevenue: number
-  totalVitalCharges: number
-  totalComfortCharges: number
+  id: number
+  simulationId: number
+  totalMonthlyVital: number
+  totalMonthlyComfortCharges: number
+  totalMonthlyImprovedIncome: number
   totalOperatingCharges: number
-  iterativeChargesResults: any[]
-  iterativeRevenueResults: any[]
-  iterativeSocialChargesResults: any[]
-  finalNetRevenue: number
-  finalGrossRevenue: number
+  breakevenThreshold: number
+  microEnterpriseRevenue: number
+  enterpriseRevenue: number
+  bestOption: 'micro' | 'entreprise' | 'egalite'
+  calculatedAt: string
 }
 
 interface FullSimulation {
@@ -72,28 +75,19 @@ interface FullSimulation {
   userId: number
   createdAt: string
   updatedAt: string
-  categories: Array<{
-    id: number
-    name: string
-    monthlyAmount: number
-    categoryType: 'vital' | 'confort'
-  }>
-  operatingCharges: Array<{
-    id: number
-    name: string
-    monthlyAmount: number
-  }>
-  parameters?: SimulationParameters
   results?: SimulationResults
 }
 
 interface CreateSimulationData {
   name: string
-  categories?: CategoryData[]
-  comfortCategories?: CategoryData[]
-  operatingCharges?: CategoryData[]
-  parameters?: Partial<SimulationParameters>
-  results?: Partial<SimulationResults>
+  totalMonthlyVital?: number
+  totalMonthlyComfortCharges?: number
+  totalMonthlyImprovedIncome?: number
+  totalOperatingCharges?: number
+  breakevenThreshold?: number
+  microEnterpriseRevenue?: number
+  enterpriseRevenue?: number
+  bestOption?: 'micro' | 'entreprise' | 'egalite'
 }
 
 interface DashboardStats {
@@ -101,12 +95,10 @@ interface DashboardStats {
   charge: string
   beneficeNet: string
   tauxCharge: string
-  nombreSimulations: number
   rawData: {
     totalCA: number
-    totalRevenuNet: number
     totalCharges: number
-    totalSimulations: number
+    totalRevenuNet: number
   }
 }
 
@@ -139,7 +131,7 @@ class ApiService {
   }
 
   // **AUTHENTIFICATION**
-  register(email: string, password: string, firstname?: string, lastname?: string): Promise<LoginResponse> {
+  register(email: string, password: string, firstname: string, lastname: string): Promise<LoginResponse> {
     return this.fetchApi<LoginResponse>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password, firstname, lastname })
@@ -166,7 +158,7 @@ class ApiService {
     return this.fetchApi<DashboardStats>('/api/simulations/dashboard/stats')
   }
 
-  // **SIMULATIONS - CRUD COMPLET**
+  // **SIMULATIONS - CRUD CONFORME AU MPD**
   createSimulation(data: CreateSimulationData): Promise<{ simulation: FullSimulation }> {
     return this.fetchApi<{ simulation: FullSimulation }>('/api/simulations', {
       method: 'POST',
@@ -193,86 +185,92 @@ class ApiService {
 
   // **UTILITAIRES POUR LE FRONTEND**
   
-  // Convertir les données frontend vers le format API
-  static formatSimulationForApi(frontendData: {
+  // Convertir les données du formulaire complexe vers la structure MPD simple
+  static convertComplexFormToMPD(formData: {
     name: string
-    categories: any[]
-    comfortCategories: any[]
-    operatingCharges: any[]
+    categories: Array<{name: string, monthly: number}>
+    comfortCategories: Array<{name: string, monthly: number}>
+    operatingCharges: Array<{name: string, monthly: number}>
     coefficient: number
-    temporalParams: any
-    socialChargesParams: any
-    results?: any
+    temporalParams?: any
+    socialChargesParams?: any
+    calculatedResults?: any
   }): CreateSimulationData {
+    // Calculer les totaux depuis les catégories
+    const totalMonthlyVital = formData.categories?.reduce((sum, cat) => sum + (cat.monthly || 0), 0) || 0
+    const totalMonthlyComfortCharges = formData.comfortCategories?.reduce((sum, cat) => sum + (cat.monthly || 0), 0) || 0
+    const totalOperatingCharges = formData.operatingCharges?.reduce((sum, charge) => sum + (charge.monthly || 0), 0) || 0
+    
+    // Revenu amélioré = (charges vitales + charges confort) × coefficient
+    const totalMonthlyImprovedIncome = (totalMonthlyVital + totalMonthlyComfortCharges) * (formData.coefficient || 1.2)
+    
+    // Seuil de rentabilité = charges vitales + charges confort + charges professionnelles  
+    const breakevenThreshold = totalMonthlyVital + totalMonthlyComfortCharges + totalOperatingCharges
+    
+    // Simulations de revenus (ici on peut utiliser les résultats calculés ou des formules simples)
+    const microEnterpriseRevenue = formData.calculatedResults?.microEnterpriseRevenue || (totalMonthlyImprovedIncome * 1.3)
+    const enterpriseRevenue = formData.calculatedResults?.enterpriseRevenue || (totalMonthlyImprovedIncome * 1.2)
+    
+    // Déterminer la meilleure option
+    const bestOption: 'micro' | 'entreprise' | 'egalite' = 
+      microEnterpriseRevenue > enterpriseRevenue ? 'micro' :
+      enterpriseRevenue > microEnterpriseRevenue ? 'entreprise' : 'egalite'
+
     return {
-      name: frontendData.name,
-      categories: frontendData.categories.map(cat => ({
-        name: cat.name,
-        monthly: cat.monthly || 0
-      })),
-      comfortCategories: frontendData.comfortCategories.map(cat => ({
-        name: cat.name,
-        monthly: cat.monthly || 0
-      })),
-      operatingCharges: frontendData.operatingCharges.map(charge => ({
-        name: charge.name,
-        monthly: charge.monthly || 0
-      })),
-      parameters: {
-        timeHorizon: frontendData.temporalParams?.timeHorizon || 12,
-        adjustmentPeriod: frontendData.temporalParams?.adjustmentPeriod || 6,
-        growthRate: frontendData.temporalParams?.growthRate || 0,
-        coefficient: frontendData.coefficient,
-        socialChargesRate: frontendData.socialChargesParams?.microEnterprise?.socialChargesRate || 0.22,
-        socialChargesMaxBase: frontendData.socialChargesParams?.enterprise?.socialChargesMaxBase || 45000,
-        microBrutMarginRate: frontendData.socialChargesParams?.microEnterprise?.grossMarginRate || 0.30
-      },
-      results: frontendData.results
+      name: formData.name,
+      totalMonthlyVital,
+      totalMonthlyComfortCharges,
+      totalMonthlyImprovedIncome,
+      totalOperatingCharges,
+      breakevenThreshold,
+      microEnterpriseRevenue,
+      enterpriseRevenue,
+      bestOption
     }
   }
 
-  // Convertir les données API vers le format frontend
-  static formatSimulationForFrontend(apiData: FullSimulation) {
-    const vitalCategories = apiData.categories?.filter(cat => cat.categoryType === 'vital') || []
-    const comfortCategories = apiData.categories?.filter(cat => cat.categoryType === 'confort') || []
-    
+  // Convertir les données MPD vers le format d'affichage frontend
+  static convertMPDToDisplayFormat(simulation: FullSimulation) {
+    if (!simulation.results) {
+      return {
+        id: simulation.id,
+        name: simulation.name,
+        categories: [],
+        comfortCategories: [],
+        operatingCharges: [],
+        results: null
+      }
+    }
+
     return {
-      id: apiData.id,
-      name: apiData.name,
-      categories: vitalCategories.map(cat => ({
-        name: cat.name,
-        monthly: cat.monthlyAmount,
-        annual: cat.monthlyAmount * 12
-      })),
-      comfortCategories: comfortCategories.map(cat => ({
-        name: cat.name,
-        monthly: cat.monthlyAmount,
-        annual: cat.monthlyAmount * 12
-      })),
-      operatingCharges: (apiData.operatingCharges || []).map(charge => ({
-        name: charge.name,
-        monthly: charge.monthlyAmount,
-        annual: charge.monthlyAmount * 12
-      })),
-      parameters: apiData.parameters,
-      results: apiData.results,
-      createdAt: apiData.createdAt,
-      updatedAt: apiData.updatedAt
+      id: simulation.id,
+      name: simulation.name,
+      totalMonthlyVital: simulation.results.totalMonthlyVital,
+      totalMonthlyComfortCharges: simulation.results.totalMonthlyComfortCharges,
+      totalMonthlyImprovedIncome: simulation.results.totalMonthlyImprovedIncome,
+      totalOperatingCharges: simulation.results.totalOperatingCharges,
+      breakevenThreshold: simulation.results.breakevenThreshold,
+      microEnterpriseRevenue: simulation.results.microEnterpriseRevenue,
+      enterpriseRevenue: simulation.results.enterpriseRevenue,
+      bestOption: simulation.results.bestOption,
+      calculatedAt: simulation.results.calculatedAt
     }
   }
 }
 
+// Export par défaut
 export default new ApiService()
 
+// Export de la classe pour accéder aux méthodes statiques
+export { ApiService }
+
 // Export des types pour utilisation dans les composants
-export type {
-  LoginResponse,
-  User,
-  SimulationListItem,
-  FullSimulation,
-  CreateSimulationData,
-  DashboardStats,
-  CategoryData,
-  SimulationParameters,
-  SimulationResults
+export type { 
+  User, 
+  LoginResponse, 
+  SimulationListItem, 
+  FullSimulation, 
+  SimulationResults,
+  CreateSimulationData, 
+  DashboardStats 
 } 

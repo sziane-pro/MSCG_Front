@@ -487,7 +487,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import apiService from '@/services/apiService'
+import apiService, { ApiService } from '@/services/apiService'
 import '@/assets/simulation.css'
 
 interface Category {
@@ -911,8 +911,8 @@ const finishSimulation = () => {
   saving.value = true
 
   try {
-    // Préparer toutes les données pour la sauvegarde
-    const simulationData = {
+    // Préparer les données complexes du formulaire
+    const complexFormData = {
       name: simulationName,
       categories: categories.value.map(cat => ({
         name: cat.name,
@@ -926,31 +926,32 @@ const finishSimulation = () => {
         name: charge.name,
         monthly: charge.monthly || 0
       })),
-      parameters: {
-        timeHorizon: temporalParams.value.workingMonthsPerYear * 12 / 10.62, // Convertir en mois
-        adjustmentPeriod: 6, // Valeur par défaut
-        growthRate: 0, // Pas utilisé actuellement dans le frontend
-        coefficient: coefficient.value,
-        socialChargesRate: socialChargesParams.value.microEnterprise.socialChargesRate,
-        socialChargesMaxBase: 45000, // Valeur par défaut
-        microBrutMarginRate: socialChargesParams.value.microEnterprise.grossMarginRate
-      },
-      results: {
+      coefficient: coefficient.value,
+      temporalParams: temporalParams.value,
+      socialChargesParams: socialChargesParams.value,
+      calculatedResults: {
         totalMonthlyRevenue: totalMonthlyRevenue.value,
         totalVitalCharges: totalMonthly.value,
         totalComfortCharges: totalComfortMonthly.value,
         totalOperatingCharges: totalOperatingCharges.value,
         iterativeChargesResults: iterativeChargesResults.value?.converged ? [iterativeChargesResults.value] : [],
-        iterativeRevenueResults: [], // Pas encore implémenté dans le frontend
-        iterativeSocialChargesResults: [], // Pas encore implémenté dans le frontend
+        iterativeRevenueResults: [],
+        iterativeSocialChargesResults: [],
         finalNetRevenue: iterativeChargesResults.value?.converged ? 
           (iterativeChargesResults.value.microEnterprise?.netRevenue || totalMonthlyRevenue.value) : 
           totalMonthlyRevenue.value,
         finalGrossRevenue: iterativeChargesResults.value?.converged ? 
           (iterativeChargesResults.value.microEnterprise?.revenue || totalMonthlyRevenue.value * 12) : 
-          totalMonthlyRevenue.value * 12
+          totalMonthlyRevenue.value * 12,
+        microEnterpriseRevenue: iterativeChargesResults.value?.converged ? 
+          (iterativeChargesResults.value.microEnterprise?.revenue || 0) : 0,
+        enterpriseRevenue: iterativeChargesResults.value?.converged ? 
+          (iterativeChargesResults.value.enterprise?.revenue || 0) : 0
       }
     }
+
+    // Convertir vers le format MPD simple en utilisant la méthode statique
+    const simulationData = ApiService.convertComplexFormToMPD(complexFormData)
 
     // Sauvegarder via l'API
     apiService.createSimulation(simulationData)
@@ -995,37 +996,43 @@ const loadSimulation = (simulationId: string) => {
     .then(simulation => {
       loadedSimulation.value = simulation
 
-      // Charger les données dans les formulaires
-      if (simulation.categories) {
-        simulation.categories.forEach((cat) => {
-          if (cat.categoryType === 'vital') {
-            const existingCat = categories.value.find(c => c.name === cat.name)
-            if (existingCat) {
-              existingCat.monthly = cat.monthlyAmount
-            }
-          } else if (cat.categoryType === 'confort') {
-            const existingCat = comfortCategories.value.find(c => c.name === cat.name)
-            if (existingCat) {
-              existingCat.monthly = cat.monthlyAmount
-            }
-          }
-        })
-      }
+      // Convertir les données MPD vers le format d'affichage
+      const displayData = ApiService.convertMPDToDisplayFormat(simulation)
+      
+      // Si on a des résultats, remplir les champs avec les valeurs calculées
+      if (simulation.results) {
+        // Répartir proportionnellement les totaux dans les catégories existantes
+        const vitalTotal = simulation.results.totalMonthlyVital
+        const comfortTotal = simulation.results.totalMonthlyComfortCharges
+        const operatingTotal = simulation.results.totalOperatingCharges
+        
+        // Répartir équitablement dans les catégories existantes ou utiliser les valeurs par défaut
+        if (vitalTotal > 0 && categories.value.length > 0) {
+          const perCategory = vitalTotal / categories.value.length
+          categories.value.forEach(cat => {
+            cat.monthly = perCategory
+          })
+        }
+        
+        if (comfortTotal > 0 && comfortCategories.value.length > 0) {
+          const perCategory = comfortTotal / comfortCategories.value.length
+          comfortCategories.value.forEach(cat => {
+            cat.monthly = perCategory
+          })
+        }
+        
+        if (operatingTotal > 0 && operatingCharges.value.length > 0) {
+          const perCategory = operatingTotal / operatingCharges.value.length
+          operatingCharges.value.forEach(charge => {
+            charge.monthly = perCategory
+          })
+        }
 
-      if (simulation.operatingCharges) {
-        simulation.operatingCharges.forEach((charge) => {
-          const existingCharge = operatingCharges.value.find(c => c.name === charge.name)
-          if (existingCharge) {
-            existingCharge.monthly = charge.monthlyAmount
-          }
-        })
-      }
-
-      if (simulation.parameters) {
-        const params = simulation.parameters
-        coefficient.value = params.coefficient || coefficient.value
-        socialChargesParams.value.microEnterprise.socialChargesRate = params.socialChargesRate
-        socialChargesParams.value.microEnterprise.grossMarginRate = params.microBrutMarginRate
+        // Calculer le coefficient approximatif : revenu amélioré / (vital + confort)
+        const totalCharges = vitalTotal + comfortTotal
+        if (totalCharges > 0) {
+          coefficient.value = simulation.results.totalMonthlyImprovedIncome / totalCharges
+        }
       }
 
       // Aller directement à l'étape 3 pour voir les résultats

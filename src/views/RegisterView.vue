@@ -7,12 +7,14 @@
         <input
           v-model="firstname"
           type="text"
-          placeholder="Prénom (optionnel)"
+          placeholder="Prénom"
+          required
         />
         <input
           v-model="lastname"
           type="text"
-          placeholder="Nom (optionnel)"
+          placeholder="Nom"
+          required
         />
       </div>
       
@@ -70,6 +72,22 @@ const loading = auth.loading
 const register = () => {
   errorMessage.value = ''
 
+  // Validation des champs obligatoires
+  if (!firstname.value.trim()) {
+    errorMessage.value = "Le prénom est obligatoire."
+    return
+  }
+
+  if (!lastname.value.trim()) {
+    errorMessage.value = "Le nom est obligatoire."
+    return
+  }
+
+  if (!email.value.trim()) {
+    errorMessage.value = "L'email est obligatoire."
+    return
+  }
+
   // Validation des mots de passe
   if (password.value !== confirmPassword.value) {
     errorMessage.value = "Les mots de passe ne correspondent pas."
@@ -82,18 +100,29 @@ const register = () => {
     return
   }
 
-  // Appeler la vraie méthode register du store
+  // Validation longueur prénom/nom selon MPD
+  if (firstname.value.trim().length > 100) {
+    errorMessage.value = "Le prénom ne peut pas dépasser 100 caractères."
+    return
+  }
+
+  if (lastname.value.trim().length > 100) {
+    errorMessage.value = "Le nom ne peut pas dépasser 100 caractères."
+    return
+  }
+
+  // Appeler la méthode register du store avec les champs obligatoires
   auth.register(
-    email.value, 
+    email.value.trim(), 
     password.value, 
-    firstname.value || undefined, 
-    lastname.value || undefined
+    firstname.value.trim(), 
+    lastname.value.trim()
   ).then(() => {
     // Redirection après inscription réussie
     router.push('/')
-     }).catch((error: any) => {
-     errorMessage.value = error.message || 'Erreur lors de l\'inscription'
-   })
+  }).catch((error: any) => {
+    errorMessage.value = error.message || 'Erreur lors de l\'inscription'
+  })
 }
 </script>
 
@@ -129,6 +158,14 @@ input {
   box-sizing: border-box;
 }
 
+input:required {
+  border-left: 3px solid #2B3A46;
+}
+
+input:invalid {
+  border-color: #dc3545;
+}
+
 .name-fields input {
   margin-bottom: 0;
 }
@@ -138,7 +175,8 @@ input {
 }
 
 .error {
-  color: red;
+  color: #dc3545;
   margin-top: 0.5rem;
+  font-weight: 500;
 }
 </style>
