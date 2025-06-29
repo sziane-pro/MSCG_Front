@@ -64,6 +64,8 @@ jobs:
             cd MSCG_Front
             npm install
             npm run build
+            rm -rf /var/www/MSCG_Front/dist
             mv dist/ /var/www/MSCG_Front/
+            rm -rf /var/tmp/MSCG_Front
 
 
