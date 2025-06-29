@@ -59,8 +59,9 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           port: 22
           script: |
-            cd /var/tmp/MSCG_Front
-            git clone git@github.com:sziane-pro/MSCG_Front.git
+            cd /var/tmp/
+            git clone git@github.com:sziane-pro/MSCG_Front.git MSCG_Front
+            cd MSCG_Front
             npm install
             npm run build
             mv dist/ /var/www/MSCG_Front/
