@@ -15,13 +15,13 @@ h1, h3, th {
 }
 
 @media (min-width: 768px) {
-  h1, h3, th {
+  h1, h3 {
     font-size: 2rem;
   }
 }
 
 @media (min-width: 1024px) {
-  h1, h3, th {
+  h1, h3 {
     font-size: 2.5rem;
   }
 }
