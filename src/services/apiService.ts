@@ -1,5 +1,15 @@
 // Service API centralisé pour toutes les communications avec le backend
-const API_BASE_URL = 'http://localhost:5002'
+const getApiBaseUrl = (): string => {
+  // Si nous sommes en développement (localhost)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5002'
+  }
+  
+  // En production, utiliser l'adresse IP et port exact du serveur
+  return 'http://185.98.139.128:40150'
+}
+
+const API_BASE_URL = getApiBaseUrl()
 
 interface ApiResponse<T = any> {
   message?: string
