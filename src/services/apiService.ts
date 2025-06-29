@@ -221,10 +221,10 @@ class ApiService {
     const microEnterpriseRevenue = formData.calculatedResults?.microEnterpriseRevenue || (totalMonthlyImprovedIncome * 1.3)
     const enterpriseRevenue = formData.calculatedResults?.enterpriseRevenue || (totalMonthlyImprovedIncome * 1.2)
     
-    // Déterminer la meilleure option
+    // Déterminer la meilleure option (celle qui coûte le MOINS cher)
     const bestOption: 'micro' | 'entreprise' | 'egalite' = 
-      microEnterpriseRevenue > enterpriseRevenue ? 'micro' :
-      enterpriseRevenue > microEnterpriseRevenue ? 'entreprise' : 'egalite'
+      microEnterpriseRevenue < enterpriseRevenue ? 'micro' :
+      enterpriseRevenue < microEnterpriseRevenue ? 'entreprise' : 'egalite'
 
     return {
       name: formData.name,

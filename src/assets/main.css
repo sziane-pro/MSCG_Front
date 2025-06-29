@@ -4,17 +4,92 @@ body {
   background-color: #f9f9f9;
 }
 
+/* Typography mobile-first */
 h1, h3, th {
   font-family: 'Poppins', sans-serif;
   color: #253786;
   font-weight: bold;
+  /* Mobile font sizes */
+  font-size: 1.5rem;
+  line-height: 1.3;
+}
+
+@media (min-width: 768px) {
+  h1, h3, th {
+    font-size: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  h1, h3, th {
+    font-size: 2.5rem;
+  }
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+@media (min-width: 768px) {
+  h1 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  h1 {
+    font-size: 3rem;
+  }
 }
 
 .subtitle {
   font-family: 'Roboto', sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+  .subtitle {
+    font-size: 1.1rem;
+  }
 }
 
 p, td {
   font-family: 'Poppins', sans-serif;
   color: #151515;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+@media (min-width: 768px) {
+  p, td {
+    font-size: 1rem;
+  }
+}
+
+/* Responsive utilities */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+@media (max-width: 767px) {
+  .text-center-mobile { text-align: center; }
+  .text-left-mobile { text-align: left; }
+}
+
+/* Responsive spacing */
+.section-padding {
+  padding: 2rem 0;
+}
+
+@media (min-width: 768px) {
+  .section-padding {
+    padding: 4rem 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-padding {
+    padding: 6rem 0;
+  }
 }

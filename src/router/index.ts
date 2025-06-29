@@ -5,6 +5,7 @@ import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import SimulationView from '@/views/SimulationView.vue'
+import ResultsView from '@/views/ResultsView.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const routes = [
@@ -21,6 +22,12 @@ const routes = [
     path: '/simulation',
     name: 'simulation',
     component: SimulationView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/results/:id',
+    name: 'results',
+    component: ResultsView,
     meta: { requiresAuth: true }
   }
 ]
