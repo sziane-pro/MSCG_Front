@@ -6,7 +6,7 @@
           ⚡ Nouvelle génération de comptabilité et gestion
         </div>
         <h1 class="hero-title">
-          Manageur MSCG Solo
+          Manageur MSCG Solo test 2
         </h1>
         <p class="hero-description">
           Simplifiez votre comptabilité, votre gestion et centralisez tous vos documents en un seul endroit. Conçu pour les indépendants qui veulent se concentrer sur l’essentiel : leur activité.
