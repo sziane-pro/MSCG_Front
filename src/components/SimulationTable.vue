@@ -3,7 +3,6 @@
     <div class="simulation-header">
       <h3 class="section-title">Mes simulations</h3>
       <div class="buttons">
-        <BaseButton color="primary" size="sm" @click="exportSimulations">Exporter</BaseButton>
         <RouterLink to="/simulation">
           <BaseButton color="primary" size="sm">Nouvelle simulation</BaseButton>
         </RouterLink>
@@ -50,16 +49,27 @@
               </div>
             </div>
             
-            <div class="card-actions">
-              <BaseButton 
-                color="primary" 
-                size="sm" 
-                @click="handleView(sim)"
-                class="full-width-mobile"
-              >
-                Voir les détails
-              </BaseButton>
-            </div>
+                         <div class="card-actions">
+               <div class="action-buttons-mobile">
+                                    <BaseButton 
+                     color="primary" 
+                     size="sm" 
+                     @click="handleView(sim)"
+                     class="action-btn-mobile"
+                   >
+                     Voir
+                   </BaseButton>
+                 <BaseButton 
+                   color="secondary" 
+                   size="sm" 
+                   @click="(event) => handleExportPDF(sim, event)"
+                   class="action-btn-mobile"
+                   :disabled="isExporting !== null"
+                 >
+                   {{ isExporting !== null ? 'Export...' : 'Export PDF' }}
+                 </BaseButton>
+               </div>
+             </div>
           </div>
         </div>
       </div>
@@ -83,17 +93,25 @@
                 <td class="date-cell">{{ formatDate(sim.date) }}</td>
                 <td class="ca-cell">{{ sim.ca }}</td>
                 <td class="revenue-cell">{{ sim.revenuNet }}</td>
-                <td class="actions-cell">
-                  <div class="actions-buttons">
-                    <BaseButton 
-                      color="primary" 
-                      size="sm" 
-                      @click="handleView(sim)"
-                    >
-                      Voir
-                    </BaseButton>
-                  </div>
-                </td>
+                                 <td class="actions-cell">
+                   <div class="actions-buttons">
+                     <BaseButton 
+                       color="primary" 
+                       size="sm" 
+                       @click="handleView(sim)"
+                     >
+                       Voir
+                     </BaseButton>
+                     <BaseButton 
+                       color="secondary" 
+                       size="sm" 
+                       @click="(event) => handleExportPDF(sim, event)"
+                       :disabled="isExporting !== null"
+                     >
+                       {{ isExporting !== null ? 'Export...' : 'Export PDF' }}
+                     </BaseButton>
+                   </div>
+                 </td>
               </tr>
             </tbody>
           </table>
@@ -121,11 +139,13 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiService, { type SimulationListItem } from '@/services/apiService'
 import BaseButton from '@/components/BaseButton.vue'
+import ExportService from '@/services/exportService'
 
 // État réactif
 const simulations = ref<SimulationListItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const isExporting = ref<number | null>(null)
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -164,6 +184,30 @@ const handleView = (simulation: any) => {
   router.push(`/results/${simulation.id}`)
 }
 
+const handleExportPDF = async (simulation: SimulationListItem, event?: Event) => {
+  // Empêcher la propagation et les actions par défaut
+  if (event) {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+  
+  // Vérifier qu'un export n'est pas déjà en cours
+  if (isExporting.value !== null) {
+    console.warn('Export déjà en cours, ignorer le nouveau clic')
+    return
+  }
+
+  try {
+    isExporting.value = simulation.id
+    await ExportService.exportSimulationToPDF(simulation.id)
+  } catch (err: any) {
+    console.error('Erreur lors de l\'export PDF:', err)
+    alert('Erreur lors de l\'export : ' + (err.message || 'Erreur inconnue'))
+  } finally {
+    isExporting.value = null
+  }
+}
+
 const editSimulation = (id: number) => {
   router.push(`/simulation/${id}/edit`)
 }
@@ -182,32 +226,7 @@ const deleteSimulation = (id: number) => {
   }
 }
 
-const exportSimulations = () => {
-  // Fonction d'export simple en CSV
-  if (simulations.value.length === 0) {
-    alert('Aucune simulation à exporter')
-    return
-  }
 
-  const headers = ['Nom', 'Date', 'CA', 'Revenu Net']
-  const csvContent = [
-    headers.join(','),
-    ...simulations.value.map(sim => [
-      `"${sim.nom}"`,
-      sim.date,
-      `"${sim.ca}"`,
-      `"${sim.revenuNet}"`
-    ].join(','))
-  ].join('\n')
-
-  const blob = new Blob([csvContent], { type: 'text/csv' })
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `simulations_${new Date().toISOString().split('T')[0]}.csv`
-  a.click()
-  window.URL.revokeObjectURL(url)
-}
 
 // Formater la date pour l'affichage
 const formatDate = (dateString: string): string => {
@@ -277,13 +296,11 @@ onMounted(() => {
 
 .buttons {
   display: flex;
-  gap: 0.75rem;
   justify-content: center;
 }
 
 @media (min-width: 768px) {
   .buttons {
-    gap: 1rem;
     justify-content: flex-end;
   }
 }
@@ -476,6 +493,16 @@ onMounted(() => {
   padding-top: 1rem;
 }
 
+.action-buttons-mobile {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.action-btn-mobile {
+  flex: 1;
+  min-height: 44px;
+}
+
 /* Table desktop */
 .table-responsive {
   overflow-x: auto;
@@ -534,12 +561,29 @@ onMounted(() => {
 .actions-cell {
   text-align: center;
   white-space: nowrap;
+  min-width: 140px;
+  width: 140px;
+}
+
+@media (min-width: 1024px) {
+  .actions-cell {
+    min-width: 160px;
+    width: 160px;
+  }
 }
 
 .actions-buttons {
   display: flex;
   gap: 0.5rem;
   justify-content: center;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 1024px) {
+  .actions-buttons {
+    gap: 0.75rem;
+    flex-wrap: nowrap;
+  }
 }
 
 /* Touch-friendly pour appareils tactiles */
