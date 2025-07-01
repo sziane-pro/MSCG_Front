@@ -3,8 +3,8 @@
     <div class="container">
       <div class="results-header">
         <h1>Résultats de la simulation</h1>
-        <RouterLink to="/" class="back-link">
-          ← Retour au dashboard
+        <RouterLink to="/dashboard" class="back-link">
+          ← Retour au tableau de bord
         </RouterLink>
       </div>
 
@@ -16,7 +16,7 @@
       <!-- État d'erreur -->
       <div v-else-if="error" class="error-state">
         <p class="error-message">{{ error }}</p>
-        <RouterLink to="/dashbord" class="retry-button">Retour au dashboard</RouterLink>
+        <RouterLink to="/dashboard" class="retry-button">Retour au tableau de bord</RouterLink>
       </div>
 
       <!-- Résultats de la simulation -->
