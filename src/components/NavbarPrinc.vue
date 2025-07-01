@@ -113,7 +113,6 @@ const handleLogout = () => {
 
 .logo img {
   height: 50px;
-  transition: height 0.2s ease;
 }
 
 @media (min-width: 768px) {
