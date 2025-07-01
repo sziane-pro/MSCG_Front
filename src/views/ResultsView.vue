@@ -16,7 +16,7 @@
       <!-- État d'erreur -->
       <div v-else-if="error" class="error-state">
         <p class="error-message">{{ error }}</p>
-        <RouterLink to="/" class="retry-button">Retour au dashboard</RouterLink>
+        <RouterLink to="/dashbord" class="retry-button">Retour au dashboard</RouterLink>
       </div>
 
       <!-- Résultats de la simulation -->
