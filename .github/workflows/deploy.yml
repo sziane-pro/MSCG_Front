@@ -67,5 +67,3 @@ jobs:
             rm -rf /var/www/MSCG_Front/dist
             mv dist/ /var/www/MSCG_Front/
             rm -rf /var/tmp/MSCG_Front
-
-

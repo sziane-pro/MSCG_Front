@@ -11,7 +11,7 @@
         <p class="hero-description">
           Simplifiez votre comptabilité, votre gestion et centralisez tous vos documents en un seul endroit. Conçu pour les indépendants qui veulent se concentrer sur l’essentiel : leur activité.
         </p>
-        <BaseButton color="primary" size="lg" class="hero-button">
+        <BaseButton color="primary" size="lg" class="hero-button" @click="handleGetStarted">
           Commencer gratuitement
         </BaseButton>
       </div>
@@ -166,6 +166,21 @@
 <script setup lang="ts">
 import BaseButton from '@/components/BaseButton.vue'
 import Footer from '@/components/Footer.vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+const handleGetStarted = () => {
+  if (authStore.isAuthenticated) {
+    // Si l'utilisateur est connecté, rediriger vers le tableau de bord
+    router.push('/dashboard')
+  } else {
+    // Sinon, rediriger vers la page de connexion
+    router.push('/login')
+  }
+}
 </script>
 
 <style scoped>
