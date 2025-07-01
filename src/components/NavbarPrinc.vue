@@ -101,7 +101,7 @@ const handleLogout = () => {
 
 @media (min-width: 768px) {
   .navbar {
-    height: 64px;
+    height: 90px;
     padding: 0 2rem;
   }
 }
@@ -118,7 +118,7 @@ const handleLogout = () => {
 
 @media (min-width: 768px) {
   .logo img {
-    height: 80px;
+    height: 100px;
   }
 }
 
